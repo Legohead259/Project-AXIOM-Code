@@ -141,7 +141,7 @@ class SBE_49_CTD_Sensor(serial.Serial):
         Defines the number of values the CTD will average
         Outputs only the average.
         """
-        if rate >= 1 and <= 255:
+        if rate >= 1 and rate <= 255:
             return self.write_data(self.SAMPLE_AVG.encode('utf-8') + rate)
         else:
             return 1
