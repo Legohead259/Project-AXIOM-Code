@@ -309,19 +309,37 @@ class SBE_49_CTD_Sensor(serial.Serial):
     #************************ Testing Commands *******************************
     ## OUTPUTS???
     def test_temp(self):
+        """
+        Measure temperature and transmits 100 samples of converted data
+        """
         self.write_data(self.TEST_TEMP.encode('utf-8') + CR)
 
     def test_conductivity(self):
+        """
+        Measures conductivity and transmits 100 samples of converted data
+        """
         self.write_data(self.TEST_CONDUCTIVITY.encode('utf-8') + CR)
 
     def test_pressure(self):
+        """
+        Measures pressure transmits 100 samples of converted data
+        """
         self.write_data(self.TEST_PRESSURE.encode('utf-8') + CR)
 
     def test_temp_raw(self):
+        """
+        Measures temperature, transmits 100 samples of raw data
+        """
         self.write_data(self.TEST_TEMP_RAW.encode('utf-8') + CR)
 
     def test_conductivity_raw(self):
+        """ 
+        measures conductivity, transmits 100 samples of raw data
+        """
         self.write_data(self.TEST_CONDUCTIVITY_RAW.encode('utf-8') + CR)
 
     def test_pressure_raw(self):
+        """
+        Measures pressure, transmits 100 samples of raw data
+        """
         self.write_data(self.TEST_CONDUCTIVITY_RAW.encode('utf-8') + CR)
