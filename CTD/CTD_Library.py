@@ -1,14 +1,17 @@
 ## CTD Library
 #  serves as a dictionary of commands and communications functions for the 
-#  SBE 49 FastCAT CTD Sensor Model No. 49 350M using command descriptions from Manual version 19. 
+#  SBE 49 FastCAT CTD Sensor Model No. 49 350M 
+#  using command descriptions from manual version 19. 
 #  Created by Jolie Elliott with support from Braidan Duffy
 #  Started 2/11/2022
+#  Last Modified 4/12/2022
 
 ## Variable definitions
-# from tkinter import N <-- why is that there
+#  from tkinter import N <-- why is that there
 
 ## STARTUP PROTOCOL???
 
+from pickle import TRUE
 import serial
 CR = b'\r'
 
@@ -83,20 +86,28 @@ class SBE_49_CTD_Sensor(serial.Serial):
     def get_DS(self):
         return self.write_Data(self.DS.encode('utf-8') + CR)
 
+
     def set_baud(self, rate=9600):
         """
         Default 9600.
         
         Options include 1200, 2400, 4800, 9600, 19200, or 38400
         """
-        # check if string, make int
-        # check if in list/range, format
-        # if n in range (): n = format(n, '01n').encode('utf-8')
-        # return -1
+        if isinstance(rate, int) == False:
+            rate = int(rate)
 
-        return self.write_data(self.BAUD_RATE_CMD.encode('utf-8') + rate + CR)
+        if rate == 1200 or rate == 2400 or rate == 4800 or rate == 9600 or rate == 19200 or rate == 38400:
+            return self.write_data(self.BAUD_RATE_CMD.encode('utf-8') + rate + CR)
+        else:
+            return -1
+
+
+        
 
     def set_output_format(self, Output_Format):
+        """
+        Default is Output_Format = OUTPUT_ROV = 3
+        """
         if Output_Format == self.OUTPUT_RAW_FREQUENCIES: 
             self.write_data(self.OUTPUT_FORMAT_CMD.encode('utf-8') + self.OUTPUT_RAW_FREQUENCIES + CR)
         elif Output_Format == self.OUTPUT_RAW_DATA:
@@ -107,12 +118,28 @@ class SBE_49_CTD_Sensor(serial.Serial):
             self.write_data(self.OUTPUT_FORMAT_CMD + self.OUTPUT_ROV)
         #UPDATE BAUD
         #CHECK ACKNOWLEDGED
+        self.read_Data()
 
-    def set_output_salinity(self):
-        self.write_data(self.OUTPUT_SAL_CMD.encode('utf-8') + self.YES + CR)
+    def set_output_salinity(self, bool):
+        """
+        If Yes: Calculates and outputs salinity in psu. 
+        Must have Output Format = OUTPUT_ROV
+        If No: Does not calculate output salinity.
+        """
+        if bool == True:
+            self.write_data(self.OUTPUT_SAL_CMD.encode('utf-8') + self.YES + CR)
+        elif bool == False:
+            self.write_data(self.OUTPUT_SAL_CMD.encode('utf-8') + self.YES + CR)
+        else:
+            return -1
 
     # Calculated in (meters/second)
     def set_output_sound_velocity(self, BOOLEAN):
+        """
+        If Yes: Calculates and outputs sound velocity in m/sec
+        Output Format == OUTPUT_ROV == 3
+        If No: Does not calculate nor output the sound velocity
+        """
         if BOOLEAN == True:
             self.write_data(self.OUTPUT_SOUND_VELOCITY.encode('utf-8') + self.YES + CR)
         if BOOLEAN == False:
@@ -135,48 +162,54 @@ class SBE_49_CTD_Sensor(serial.Serial):
         self.write_data("SetDefaults".encode('utf-8') + CR)
 
 
-    def set__sample_avg(self, rate):
+    def set_sample_avg(self, rate):
         """
         Range: 1-255 samples.
         Defines the number of values the CTD will average
         Outputs only the average.
         """
         if rate >= 1 and rate <= 255:
-            return self.write_data(self.SAMPLE_AVG.encode('utf-8') + rate)
+            return self.write_data(self.SAMPLE_AVG.encode('utf-8') + rate + CR)
         else:
-            return 1
+            return -1
 
 
     def set_min_conductivity(self, frequency):
         """
         Minimum conductivity frequency must be reached before pump turns on
         Ensures pump is in water before use
-        Typical for salt water is 500 Hz; default is 3000 Hz
+        Typical for salt water is 500 Hz
+        Freshwater is 5Hz
+        Default is 3000 Hz
         """
-        self.write_data(self.CONDUCTIVITY_FREQUENCY.encode('utf-8') + frequency)
+        self.write_data(self.CONDUCTIVITY_FREQUENCY.encode('utf-8') + frequency + CR)
 
 
     def pump_delay(self, time):
         """
         Delays pump after Conductivity Frequency threshold has been met
+        Used to allow tubing to fill with water
+        Default 30 seconds
+        Used when conductivity cell's frequency greater than min_conductivity
         """
-        self.write_data(self.TIME_TO_DELAY + time)
+        self.write_data(self.TIME_TO_DELAY.encode('utf-8') + time + CR)
 
 
     # post-processing data is not applicable to use in AUVs and ROVs
-    # ROV records data on command
-    # preventing post-calculations from being performed. 
+    # ROV records data on command which 
+    # prevents post-calculations from being performed. 
     # For more information, google it. 
     def process_data(self, Bool):
         """
         When Yes: Corrects for alignment, filtering, and conductivity cell thermal mass 
-        for data in real time. Cannot be used if output format is not 1 or 3.
+        for data in real time. 
+        Cannot be used if output format is not 1 or 3.
         Note that post-processing data is not applicable for AUVs and ROVs.
         """
         if Bool == True:
-            self.write_data(self.PROCESS_DATA + self.YES)
+            self.write_data(self.PROCESS_DATA.encode('utf-8') + self.YES + CR)
         else:
-            self.write_data(self.PROCESS_DATA + self.NO)
+            self.write_data(self.PROCESS_DATA.encode('utf-8') + self.NO + CR)
 
 
     def temp_advance(self, Temp_Time):
@@ -189,8 +222,10 @@ class SBE_49_CTD_Sensor(serial.Serial):
         Conditions: Process_Data=Y
         Ouptut_Format=1 or 3.
         """
-
-        self.write_data(self.TEMP_ADVANCE + Temp_Time)
+        if Temp_Time>=0 and Temp_Time <= 0.125:
+            self.write_data(self.TEMP_ADVANCE.encode('utf-8') + Temp_Time + CR)
+        else: 
+            return -1 
 
 
     def thermal_cell_alpha(self, Alpha):
@@ -199,43 +234,56 @@ class SBE_49_CTD_Sensor(serial.Serial):
         corrects amplitude
         Range: 0.02 to 0.05
         Default: 0.03
-        Conditions: ProcessRealTime=Y
+        Conditions: ProcessRealTime=Y (default)
         OutputFormat=1 or 3
         """
-        self.write_data(self.ALPHA_COEFFICIENT + Alpha)
+        if Alpha >= 0.02 and Alpha <= 0.05:
+            self.write_data(self.ALPHA_COEFFICIENT.encode('utf-8') + Alpha + CR)
+        else: 
+            return -1
 
     def thermal_cell_tau(self, Tau):
         """
         Conductivity Cell Thermal Mass Tau Correction
-        corrects time constant
+        Corrects time constant
         Range: 5.0 to 10.0
         Default: 7.0
-        Conditions: ProcessRealTime=Y and OutputFormat=1 or 3
+        Conditions: ProcessRealTime=Y (default) and OutputFormat=1 or 3
         """
-        self.write_data(self.TAU_COEFFICIENT + Tau)
+        if Tau>= 5 and Tau<= 10:
+            self.write_data(self.TAU_COEFFICIENT.encode('utf-8') + Tau + CR)
+        else:
+            return -1
 
     def auto_sample(self, Bool):
         """
-        Auto_Sqample = YES starts autonomous sampling automatically
+        Auto_Sample = YES starts autonomous sampling automatically
         Must turn power off and on or call start_sample
         Default: auto_sample = NO
-        Turn on Power
+        When Auto_sample is no, must turn on Power
         Waits for command when power is ON
         """
         if Bool == True:
-            self.write_data(self.AUTO_SAMPLE + self.YES)
+            self.write_data(self.AUTO_SAMPLE.encode('utf-8') + self.YES + CR)
         else:
-            self.write_data(self.AUTO_SAMPLE + self.NO)
+            self.write_data(self.AUTO_SAMPLE.encode('utf-8') + self.NO + CR)
 
     def start_sample(self):
-        self.write_data(self.START_SAMPLE)
+        """
+        begins autonomous sampling (when auto_sample = NO)
+        May need to send if auto_sample = YES command was just sent 
+        """
+        self.write_data(self.START_SAMPLE.encode('utf-8') + CR)
+        self.read.Data()
 
     def stop_sample(self):
         """
+        must press enter key to get S> prompt before entering Stop
         May need to send command multiple times for a response
         Backup is to remove power
         """
-        self.write_data(self.STOP_SAMPLE)
+        self.write_data(self.STOP_SAMPLE.encode('utf-8') + CR)
+        self.read_Data()
 
 
     #**************************Polled Sampling Commands***********************
@@ -244,32 +292,36 @@ class SBE_49_CTD_Sensor(serial.Serial):
         """
         Must turn pump on before calling take_sample or testing pump
         """
-        self.write_data(self.PUMP_ON)
+        self.write_data(self.PUMP_ON.encode('utf-8') + CR)
 
     def pump_off(self):
-        """Literally just turns the pump off. """
-        self.write_data(self.Pump_OFF)
+        """
+        Literally just turns the pump off. 
+        """
+        self.write_data(self.Pump_OFF.encode('utf-8') + CR)
 
     def take_sample(self):
-        """Takes 1 sample and transmits the data"""
-        self.write_data(self.TAKE_SAMPLE)
+        """
+        Takes 1 sample and transmits the data
+        """
+        self.write_data(self.TAKE_SAMPLE.encode('utf-8') + CR)
 
     #************************ Testing Commands *******************************
     ## OUTPUTS???
     def test_temp(self):
-        self.write_data(self.TEST_TEMP)
+        self.write_data(self.TEST_TEMP.encode('utf-8') + CR)
 
     def test_conductivity(self):
-        self.write_data(self.TEST_CONDUCTIVITY)
+        self.write_data(self.TEST_CONDUCTIVITY.encode('utf-8') + CR)
 
     def test_pressure(self):
-        self.write_data(self.TEST_PRESSURE)
+        self.write_data(self.TEST_PRESSURE.encode('utf-8') + CR)
 
     def test_temp_raw(self):
-        self.write_data(self.TEST_TEMP_RAW)
+        self.write_data(self.TEST_TEMP_RAW.encode('utf-8') + CR)
 
     def test_conductivity_raw(self):
-        self.write_data(self.TEST_CONDUCTIVITY_RAW)
+        self.write_data(self.TEST_CONDUCTIVITY_RAW.encode('utf-8') + CR)
 
     def test_pressure_raw(self):
-        self.write_data(self.TEST_CONDUCTIVITY_RAW)
+        self.write_data(self.TEST_CONDUCTIVITY_RAW.encode('utf-8') + CR)
