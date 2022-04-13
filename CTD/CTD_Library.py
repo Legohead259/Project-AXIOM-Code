@@ -13,7 +13,7 @@
 
 from pickle import TRUE
 import serial
-CR = b'\r'
+CR = b'\r' #Character Return
 
 
 
@@ -93,32 +93,31 @@ class SBE_49_CTD_Sensor(serial.Serial):
         
         Options include 1200, 2400, 4800, 9600, 19200, or 38400
         """
+        baud_rates = [1200, 2400, 4800, 9600, 19200, 38400]
+
         if isinstance(rate, int) == False:
             rate = int(rate)
 
-        if rate == 1200 or rate == 2400 or rate == 4800 or rate == 9600 or rate == 19200 or rate == 38400:
-            return self.write_data(self.BAUD_RATE_CMD.encode('utf-8') + rate + CR)
+        if rate in baud_rates:
+            return self.write_Data(self.BAUD_RATE_CMD.encode('utf-8') + rate + CR)
         else:
             return -1
 
-
-        
 
     def set_output_format(self, Output_Format):
         """
         Default is Output_Format = OUTPUT_ROV = 3
         """
         if Output_Format == self.OUTPUT_RAW_FREQUENCIES: 
-            self.write_data(self.OUTPUT_FORMAT_CMD.encode('utf-8') + self.OUTPUT_RAW_FREQUENCIES + CR)
+            self.write_Data(self.OUTPUT_FORMAT_CMD.encode('utf-8') + self.OUTPUT_RAW_FREQUENCIES + CR)
         elif Output_Format == self.OUTPUT_RAW_DATA:
-            self.write_data(self.OUTPUT_FORMAT_CMD.encode('utf-8') + self.OUTPUT_RAW_DATA + CR)
+            self.write_Data(self.OUTPUT_FORMAT_CMD.encode('utf-8') + self.OUTPUT_RAW_DATA + CR)
         elif Output_Format == self.OUTPUT_CONVERTED_DATA: 
-            self.write_data(self.OUTPUT_FORMAT_CMD.encode('utf-8') + self.OUTPUT_CONVERTED_DATA + CR)
+            self.write_Data(self.OUTPUT_FORMAT_CMD.encode('utf-8') + self.OUTPUT_CONVERTED_DATA + CR)
         elif Output_Format == self.OUTPUT_ROV: 
-            self.write_data(self.OUTPUT_FORMAT_CMD + self.OUTPUT_ROV)
+            self.write_Data(self.OUTPUT_FORMAT_CMD + self.OUTPUT_ROV)
         #UPDATE BAUD
         #CHECK ACKNOWLEDGED
-        self.read_Data()
 
     def set_output_salinity(self, bool):
         """
@@ -127,9 +126,9 @@ class SBE_49_CTD_Sensor(serial.Serial):
         If No: Does not calculate output salinity.
         """
         if bool == True:
-            self.write_data(self.OUTPUT_SAL_CMD.encode('utf-8') + self.YES + CR)
+            self.write_Data(self.OUTPUT_SAL_CMD.encode('utf-8') + self.YES + CR)
         elif bool == False:
-            self.write_data(self.OUTPUT_SAL_CMD.encode('utf-8') + self.YES + CR)
+            self.write_Data(self.OUTPUT_SAL_CMD.encode('utf-8') + self.YES + CR)
         else:
             return -1
 
@@ -141,9 +140,9 @@ class SBE_49_CTD_Sensor(serial.Serial):
         If No: Does not calculate nor output the sound velocity
         """
         if BOOLEAN == True:
-            self.write_data(self.OUTPUT_SOUND_VELOCITY.encode('utf-8') + self.YES + CR)
+            self.write_Data(self.OUTPUT_SOUND_VELOCITY.encode('utf-8') + self.YES + CR)
         if BOOLEAN == False:
-            self.write_data(self.OUTPUT_SOUND_VELOCITY.encode('utf-8') + self.NO + CR)
+            self.write_Data(self.OUTPUT_SOUND_VELOCITY.encode('utf-8') + self.NO + CR)
 
     def set_defaults(self):
         """
@@ -159,7 +158,7 @@ class SBE_49_CTD_Sensor(serial.Serial):
         Tau                   = 7.0
         AutoRun               = N
         """
-        self.write_data("SetDefaults".encode('utf-8') + CR)
+        self.write_Data("SetDefaults".encode('utf-8') + CR)
 
 
     def set_sample_avg(self, rate):
@@ -169,7 +168,7 @@ class SBE_49_CTD_Sensor(serial.Serial):
         Outputs only the average.
         """
         if rate >= 1 and rate <= 255:
-            return self.write_data(self.SAMPLE_AVG.encode('utf-8') + rate + CR)
+            return self.write_Data(self.SAMPLE_AVG.encode('utf-8') + rate + CR)
         else:
             return -1
 
@@ -182,7 +181,7 @@ class SBE_49_CTD_Sensor(serial.Serial):
         Freshwater is 5Hz
         Default is 3000 Hz
         """
-        self.write_data(self.CONDUCTIVITY_FREQUENCY.encode('utf-8') + frequency + CR)
+        self.write_Data(self.CONDUCTIVITY_FREQUENCY.encode('utf-8') + frequency + CR)
 
 
     def pump_delay(self, time):
@@ -192,7 +191,7 @@ class SBE_49_CTD_Sensor(serial.Serial):
         Default 30 seconds
         Used when conductivity cell's frequency greater than min_conductivity
         """
-        self.write_data(self.TIME_TO_DELAY.encode('utf-8') + time + CR)
+        self.write_Data(self.TIME_TO_DELAY.encode('utf-8') + time + CR)
 
 
     # post-processing data is not applicable to use in AUVs and ROVs
@@ -207,9 +206,9 @@ class SBE_49_CTD_Sensor(serial.Serial):
         Note that post-processing data is not applicable for AUVs and ROVs.
         """
         if Bool == True:
-            self.write_data(self.PROCESS_DATA.encode('utf-8') + self.YES + CR)
+            self.write_Data(self.PROCESS_DATA.encode('utf-8') + self.YES + CR)
         else:
-            self.write_data(self.PROCESS_DATA.encode('utf-8') + self.NO + CR)
+            self.write_Data(self.PROCESS_DATA.encode('utf-8') + self.NO + CR)
 
 
     def temp_advance(self, Temp_Time):
@@ -222,8 +221,8 @@ class SBE_49_CTD_Sensor(serial.Serial):
         Conditions: Process_Data=Y
         Ouptut_Format=1 or 3.
         """
-        if Temp_Time>=0 and Temp_Time <= 0.125:
-            self.write_data(self.TEMP_ADVANCE.encode('utf-8') + Temp_Time + CR)
+        if Temp_Time >= 0 and Temp_Time <= 0.125:
+            self.write_Data(self.TEMP_ADVANCE.encode('utf-8') + Temp_Time + CR)
         else: 
             return -1 
 
@@ -238,7 +237,7 @@ class SBE_49_CTD_Sensor(serial.Serial):
         OutputFormat=1 or 3
         """
         if Alpha >= 0.02 and Alpha <= 0.05:
-            self.write_data(self.ALPHA_COEFFICIENT.encode('utf-8') + Alpha + CR)
+            self.write_Data(self.ALPHA_COEFFICIENT.encode('utf-8') + Alpha + CR)
         else: 
             return -1
 
@@ -250,8 +249,8 @@ class SBE_49_CTD_Sensor(serial.Serial):
         Default: 7.0
         Conditions: ProcessRealTime=Y (default) and OutputFormat=1 or 3
         """
-        if Tau>= 5 and Tau<= 10:
-            self.write_data(self.TAU_COEFFICIENT.encode('utf-8') + Tau + CR)
+        if Tau >= 5 and Tau <= 10:
+            self.write_Data(self.TAU_COEFFICIENT.encode('utf-8') + Tau + CR)
         else:
             return -1
 
@@ -264,17 +263,17 @@ class SBE_49_CTD_Sensor(serial.Serial):
         Waits for command when power is ON
         """
         if Bool == True:
-            self.write_data(self.AUTO_SAMPLE.encode('utf-8') + self.YES + CR)
+            self.write_Data(self.AUTO_SAMPLE.encode('utf-8') + self.YES + CR)
         else:
-            self.write_data(self.AUTO_SAMPLE.encode('utf-8') + self.NO + CR)
+            self.write_Data(self.AUTO_SAMPLE.encode('utf-8') + self.NO + CR)
 
     def start_sample(self):
         """
         begins autonomous sampling (when auto_sample = NO)
         May need to send if auto_sample = YES command was just sent 
         """
-        self.write_data(self.START_SAMPLE.encode('utf-8') + CR)
-        self.read.Data()
+        self.write_Data(self.START_SAMPLE.encode('utf-8') + CR)
+
 
     def stop_sample(self):
         """
@@ -282,8 +281,8 @@ class SBE_49_CTD_Sensor(serial.Serial):
         May need to send command multiple times for a response
         Backup is to remove power
         """
-        self.write_data(self.STOP_SAMPLE.encode('utf-8') + CR)
-        self.read_Data()
+        self.write_Data(self.STOP_SAMPLE.encode('utf-8') + CR)
+
 
 
     #**************************Polled Sampling Commands***********************
